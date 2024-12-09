@@ -1,0 +1,13 @@
+scripts:
+  - filename:	DeploymentInstructions.bat
+    target_os:	windows
+  - filename:	DeploymentInstructions.sh
+    target_os:	linux
+path_parameters:
+  - input
+  - xml_file
+  - name
+  - path
+  - file
+source_code_root: root folder of the repository
+logfile: scripts-check.log

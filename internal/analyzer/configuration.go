@@ -1,8 +1,14 @@
 package analyzer
 
+type scriptDefinition struct {
+	Filename string `yaml:"filename"`
+	TargetOS string `yaml:"target_os"`
+}
+
 // Application configuration structure
 type Parameters struct {
-	SourceCodeFolder string   `yaml:"source_code_folder"`
-	PathParameters   []string `yaml:"path_parameters"`
-	Logfile          string   `yaml:"logfile"`
+	Scripts        []scriptDefinition `yaml:"scripts"`
+	PathParameters []string           `yaml:"path_parameters"`
+	SourceCodeRoot string             `yaml:"source_code_root"`
+	Logfile        string             `yaml:"logfile"`
 }

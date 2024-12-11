@@ -1,7 +1,7 @@
 scripts:
   - filename:	DeploymentInstructions.bat
     target_os:	windows
-  - filename:	DeploymentInstructions.sh
+  - filename:	DeploymentInstructions.sh_
     target_os:	linux
 path_parameters:
   - input
@@ -9,5 +9,9 @@ path_parameters:
   - name
   - path
   - file
-source_code_root: root folder of the repository
-logfile: scripts-check.log
+source_code_root: test_data
+ignore_patterns:
+  - "*.tst"
+  - "*.bat*"
+  - creds*
+logfile: execution.log

@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"runtime"
+	"strings"
 
 	"github.com/ananchev/validate-tcx-deploy-script/internal/logger"
 )
@@ -10,6 +11,7 @@ type Lines struct {
 	Valid   map[int]string
 	Invalid map[int]string
 	Skipped map[int]string
+	Missing []string
 }
 
 type Result struct {
@@ -22,7 +24,7 @@ var (
 	convertTo   string
 )
 
-var AnalyzisResult Result = Result{
+var analysisResult Result = Result{
 	File: make(map[string]Lines),
 }
 
@@ -34,17 +36,22 @@ func Run(params Parameters) {
 	for _, script := range params.Scripts {
 
 		// create a results set for each of our filepaths
-		AnalyzisResult.File[script.Filename] = Lines{
+		analysisResult.File[script.Filename] = Lines{
 			Valid:   make(map[int]string),
 			Invalid: make(map[int]string),
 			Skipped: make(map[int]string),
+			Missing: []string{},
 		}
+
 		logger.Heading(" ")
 		logger.Separate("file '{filePath}'", "filePath", script.Filename)
 		logger.Separate("=====================================")
 		logger.Separate("SCRIPTS SYNTAX CHECK")
 		checkFileSyntax(script.Filename, params.SourceCodeRoot)
+
 		logger.Separate("FILE SYSTEM REFERENCES CHECK")
+		logger.Separate("Only path definitions with valid syntax are checked.")
+		logger.Separate("The erroring lines found in the script syntax check are ignored.")
 		logger.Separate("-------")
 
 		runtimeOS := runtime.GOOS
@@ -66,9 +73,40 @@ func Run(params Parameters) {
 		} else {
 			logger.Debug("Target OS for '{f}' is matching with the runtime OS", "f", script.Filename)
 		}
+		checkFilePaths(script.Filename, params.SourceCodeRoot, analysisResult.File[script.Filename].Valid)
+		logger.Separate("-------")
 
-		checkFilePaths(script.Filename, params.SourceCodeRoot, AnalyzisResult.File[script.Filename].Valid)
+		logger.Separate("DIRECTORY CONTENT CHECK")
+		logger.Separate("File & directory patterns defined as 'ignore_patterns' in the configuration are ignored")
+		logger.Separate("-------")
+
+		if runtimeOS == "linux" {
+			logger.Debug("We are running on '{ros}', replacing all '\\' in ignore_patterns with '/'", "ros", runtimeOS)
+		} else if runtimeOS == "windows" {
+			logger.Debug("We are running on '{ros}', replacing all '/' in ignore_patterns with '\\'", "ros", runtimeOS)
+		}
+		validLines := replaceInMap(analysisResult.File[script.Filename].Valid, convertFrom, convertTo)
+		ignorePatterns := replaceInSlice(params.IgnorePatterns, convertFrom, convertTo)
+		compareFilesWithScripts(script.Filename, validLines, params.SourceCodeRoot, ignorePatterns)
 		logger.Separate("-------")
 		logger.Separate(" ")
 	}
+}
+
+func replaceInSlice(slice []string, oldChar, newChar string) []string {
+	var result []string
+	for _, item := range slice {
+		updatedItem := strings.ReplaceAll(item, oldChar, newChar)
+		result = append(result, updatedItem)
+	}
+	return result
+}
+
+func replaceInMap(inputMap map[int]string, oldChar, newChar string) map[int]string {
+	updatedMap := make(map[int]string)
+	for key, value := range inputMap {
+		updatedValue := strings.ReplaceAll(value, oldChar, newChar)
+		updatedMap[key] = updatedValue
+	}
+	return updatedMap
 }

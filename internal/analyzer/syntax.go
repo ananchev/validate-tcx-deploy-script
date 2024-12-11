@@ -51,11 +51,11 @@ func print(lineType string, filePath string) {
 	var lines map[int]string
 	switch lineType {
 	case "valid":
-		lines = AnalyzisResult.File[filePath].Valid
+		lines = analysisResult.File[filePath].Valid
 	case "invalid":
-		lines = AnalyzisResult.File[filePath].Invalid
+		lines = analysisResult.File[filePath].Invalid
 	case "skipped":
-		lines = AnalyzisResult.File[filePath].Skipped
+		lines = analysisResult.File[filePath].Skipped
 	}
 	if len(lines) == 0 {
 		logger.Info("No {lt} entries found", "lt", lineType)
@@ -111,7 +111,7 @@ func parseLineAsCommand(file string, line string, lineNumber int) {
 		// Check if the flag found is properly formatted
 		if len(matches) < 2 {
 			logger.Debug("line '{l}': '-{s}' is present but not quoted properly", "l", lineNumber, "s", flagName)
-			AnalyzisResult.File[file].Invalid[lineNumber] = line
+			analysisResult.File[file].Invalid[lineNumber] = line
 			skipLine = false
 			break
 		} else if len(matches) == 2 {
@@ -119,7 +119,7 @@ func parseLineAsCommand(file string, line string, lineNumber int) {
 			logger.Debug("Formatting correct, extracting the file path in '-{f}'...", "f", flagName)
 			filePath := matches[1]
 			logger.Debug("filepath is: '{fp}'", "fp", filePath)
-			AnalyzisResult.File[file].Valid[lineNumber] = filePath
+			analysisResult.File[file].Valid[lineNumber] = filePath
 			skipLine = false
 			break
 		}
@@ -127,7 +127,7 @@ func parseLineAsCommand(file string, line string, lineNumber int) {
 
 	if skipLine {
 		logger.Debug("line '{ln} {l}' does not contain any flag of interest", "ln", lineNumber, "l", line)
-		AnalyzisResult.File[file].Skipped[lineNumber] = line
+		analysisResult.File[file].Skipped[lineNumber] = line
 	}
 
 }

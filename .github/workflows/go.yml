@@ -1,10 +1,11 @@
 name: Build and Release Go Application
 
 on:
-  workflow_dispatch:
+  workflow_dispatch
 
 permissions:
   contents: write
+  repository-projects: write
 
 jobs:
   build:

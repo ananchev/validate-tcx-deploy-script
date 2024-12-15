@@ -1,7 +1,7 @@
 scripts:
-  - filename:	DeploymentInstructions.bat
+  - filename:	win_script.bat
     target_os:	windows
-  - filename:	DeploymentInstructions.sh_
+  - filename:	script.sh
     target_os:	linux
 path_parameters:
   - input
@@ -9,9 +9,14 @@ path_parameters:
   - name
   - path
   - file
-source_code_root: test_data
+source_code_root: 'test_data'
 ignore_patterns:
-  - "*.tst"
-  - "*.bat*"
-  - creds*
+  global:
+    - 'folder1'
+    - 'folder2'
+    - '*.md'
+    - 'win_script.bat'
+    - 'scriprt.sh'
+  stylesheets_folder:
+    - '*.txt'
 logfile: execution.log

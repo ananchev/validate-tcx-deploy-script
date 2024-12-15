@@ -1,36 +1,43 @@
 # Execution flow
 ```mermaid
+---
+config:
+    noteAlign: left
+---
 sequenceDiagram
     autonumber
     participant User
+    box Code Execution
     participant Main
-    participant ConfigLoader
     participant Logger
     participant Analyzer
-
-    Note over User: scripts-check -c path/to/config
-    User->>Main: Run application
-    Main->>ConfigLoader: Load Configuration
-    ConfigLoader->>Logger: Initialize logger
-    ConfigLoader->>Analyzer: Provide configurations
-
-    loop Analyze each script
-        Analyzer->>Analyzer: Check script syntax validity
-        Analyzer->>Analyzer: Do all paths exist on file system?
-        Analyzer->>Analyzer: Are all files from disk in the script?
-        Analyzer->>Analyzer: Validate stylesheet imports
-
-        alt Passed checks
-            opt Log level permits info logging
-                Analyzer->>Logger: Log info about successful checks
-            end
-        else Failed checks
-            Analyzer->>Logger: Log error specifying failed check
-        end
     end
 
-    Logger->>User: Output analysis results
+    User->>Main: Run application
+    Note right of User: <executable> -c path/to/<config.yml>
+    Note right of User: <config.yml> <br> - Deployment scripts filenames and target operating system <br> - Arguments for which to extract & check file paths <br> - Exclusions when checking repository content vs. scripts<br> - Local directory where TC configuriton files are stored
     
+    Main->>Logger: Initialize logger
+    Main->>Analyzer: Load Configuration
+   
+
+    
+
+    loop Analyze the config-n deployment scripts for Linux & Windows
+        Analyzer->>Analyzer: Check syntax of the script <br> arguments providing file paths
+        Analyzer->>Analyzer: Are all file paths in the <br> script existing on file system?
+        Analyzer->>Analyzer: Are there files on file system <br> not included in the script?
+        Analyzer->>Analyzer: Check input file for stylesheet import <br> and if all XML files exist on disk
+        critical Failed checks
+            Analyzer->>Logger: Log error specifying failed check
+        end
+        opt If logging level = info
+                Analyzer->>Logger: Log successful checks
+        end
+
+    end
+    Logger->>User: Output analysis results
+    Note left of Main: <Logfile path as set in config>.log
 ```
 
 # Example configuration file

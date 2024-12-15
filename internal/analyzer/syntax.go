@@ -37,13 +37,12 @@ func checkFileSyntax(filePath string, sourceCodeRoot string) {
 	}
 
 	logger.Info("valid lines")
-	logger.Separate("-------")
 	print("valid", filePath)
+	logger.Info("stylesheet import")
+	print("stylesheet import", filePath)
 	logger.Separate("lines with invalid syntax of referenced filepaths")
-	logger.Separate("-------")
 	print("invalid", filePath)
 	logger.Info("skipped lines")
-	logger.Separate("-------")
 	print("skipped", filePath)
 }
 
@@ -56,6 +55,8 @@ func print(lineType string, filePath string) {
 		lines = analysisResult.File[filePath].Invalid
 	case "skipped":
 		lines = analysisResult.File[filePath].Skipped
+	case "stylesheet import":
+		lines = analysisResult.File[filePath].GetStyleSheetImportLines()
 	}
 	if len(lines) == 0 {
 		logger.Info("No {lt} entries found", "lt", lineType)
@@ -71,9 +72,9 @@ func print(lineType string, filePath string) {
 	for _, i := range si {
 
 		if lineType == "invalid" {
-			logger.Error("\t{ln}:\t'{val}'", "ln", i, "val", lines[i])
+			logger.Error("'{f}' line '{ln}' is invalid: '{val}'", "f", filePath, "ln", i, "val", lines[i])
 		} else {
-			logger.Info("\t{ln}:\t'{val}'", "ln", i, "val", lines[i])
+			logger.Info("'{f}' line '{ln}' is valid: '{val}'", "f", filePath, "ln", i, "val", lines[i])
 		}
 	}
 }
@@ -84,7 +85,7 @@ func parseLineAsCommand(file string, line string, lineNumber int) {
 
 	var skipLine bool = true
 
-	for _, flagName := range _pathParameters {
+	for _, flagName := range pathParameters {
 
 		logger.Debug("searching for flag '{f}'", "f", flagName)
 
@@ -112,7 +113,7 @@ func parseLineAsCommand(file string, line string, lineNumber int) {
 		if len(matches) < 2 {
 			logger.Debug("line '{l}': '-{s}' is present but not quoted properly", "l", lineNumber, "s", flagName)
 			analysisResult.File[file].Invalid[lineNumber] = line
-			skipLine = false
+			skipLine = false // do not capture this line as skip line
 			break
 		} else if len(matches) == 2 {
 			// Extract the file path
@@ -120,7 +121,21 @@ func parseLineAsCommand(file string, line string, lineNumber int) {
 			filePath := matches[1]
 			logger.Debug("filepath is: '{fp}'", "fp", filePath)
 			analysisResult.File[file].Valid[lineNumber] = filePath
-			skipLine = false
+
+			skipLine = false // do not capture this line as skip line
+
+			logger.Debug("is the line defining a call to 'install_xml_stylesheet_datasets' utility?")
+			var (
+				inputFile           string
+				stylesheetsFilepath string
+			)
+			if isStylesheetImportLine(line, &inputFile, &stylesheetsFilepath) {
+				analysisResult.File[file].StyleSheetImport[lineNumber] = StyleSheetImport{
+					Line:         line,
+					XMLsFilepath: stylesheetsFilepath,
+					InputFile:    inputFile,
+				}
+			}
 			break
 		}
 	}
@@ -130,4 +145,39 @@ func parseLineAsCommand(file string, line string, lineNumber int) {
 		analysisResult.File[file].Skipped[lineNumber] = line
 	}
 
+}
+
+func isStylesheetImportLine(line string, input *string, filepath *string) bool {
+	regex := regexp.MustCompile(`install_xml_stylesheet_datasets`)
+	if !regex.MatchString(line) {
+		logger.Debug("'{l}' does not contain 'install_xml_stylesheet_datasets'", "l", line)
+		return false
+	}
+	logger.Debug("'{l}' is refering to 'install_xml_stylesheet_datasets'", "l", line)
+	logger.Debug("Extracting the values for input and filepath flags...")
+
+	regex = regexp.MustCompile(`-input="([^"]+)"|-filepath="([^"]+)"`)
+	matches := regex.FindAllStringSubmatch(line, -1)
+
+	logger.Debug("Match is '{m}'", "m", matches)
+	for _, match := range matches {
+		if match[1] != "" {
+			logger.Debug("Value of -input flag is is '{v}'", "v", match[1])
+			*input = match[1]
+		}
+		if match[2] != "" {
+			logger.Debug("Value of -filepath flag is is '{v}'", "v", match[2])
+			*filepath = match[2]
+		}
+	}
+	return true
+}
+
+// Method to get a map of line numbers to Line strings from StyleSheetImport struct
+func (l Lines) GetStyleSheetImportLines() map[int]string {
+	importLines := make(map[int]string)
+	for lineNumber, styleSheetImport := range l.StyleSheetImport {
+		importLines[lineNumber] = styleSheetImport.Line
+	}
+	return importLines
 }

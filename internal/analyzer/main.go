@@ -43,6 +43,9 @@ func Run(params Parameters) {
 	pathParameters = params.PathParameters
 	sourceCodeRoot = params.SourceCodeRoot
 
+	// Initialize regex patterns once for performance
+	initializeRegexPatterns(params.PathParameters)
+
 	for _, script := range params.Scripts {
 
 		// create a results set for each of our filepaths
@@ -58,7 +61,7 @@ func Run(params Parameters) {
 		logger.Separate("file '{filePath}'", "filePath", script.Filename)
 		logger.Separate("=====================================")
 		logger.Separate("SCRIPT SYNTAX CHECK")
-		checkFileSyntax(script.Filename, params.SourceCodeRoot)
+		checkFileSyntax(script.Filename, params.SourceCodeRoot, script.TargetOS)
 
 		logger.Separate("FILE SYSTEM REFERENCES CHECK")
 		logger.Separate("Only path definitions with valid syntax are checked.")
@@ -103,6 +106,9 @@ func Run(params Parameters) {
 		compareFilesWithScripts(script.Filename, validLines, params.SourceCodeRoot, ignores.Global)
 		logger.Separate(" ")
 	}
+
+	// Check script parity (same executables in Windows and Linux scripts)
+	checkScriptParity(params.Scripts)
 }
 
 func replaceInMap(inputMap map[int]string, oldChar, newChar string) map[int]string {

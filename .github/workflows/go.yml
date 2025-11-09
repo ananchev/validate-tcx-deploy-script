@@ -9,37 +9,41 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        go-version: [1.19]  # Specify the Go versions to use
+        include:
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            output: script-check
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            output: script-check.exe
+        go-version: [1.23]  # Updated to latest stable Go version
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go-version }}
 
     - name: Build Go Application
-      run: |
-        if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-          GOOS=linux GOARCH=amd64 go build -ldflags "-w -s" -o script-check
-        else
-          GOOS=windows GOARCH=amd64 go build -ldflags "-w -s" -o script-check.exe
-        fi
+      run: go build -ldflags "-w -s" -o ${{ matrix.output }}
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
 
     - name: Upload Build Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: myapp-build
-        path: |
-          script-check
-          script-check.exe
+        name: build-${{ matrix.os }}
+        path: ${{ matrix.output }}
         if-no-files-found: error
 
   release:
@@ -47,39 +51,27 @@ jobs:
     needs: build
 
     steps:
-    - name: Download Build Artifacts
-      uses: actions/download-artifact@v3
+    - name: Download Build Artifacts (Linux)
+      uses: actions/download-artifact@v4
       with:
-        name: myapp-build
+        name: build-ubuntu-latest
+        path: build
+
+    - name: Download Build Artifacts (Windows)
+      uses: actions/download-artifact@v4
+      with:
+        name: build-windows-latest
         path: build
 
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v2
       with:
-        tag_name: v1.0.${{ github.run_number }}
-        release_name: Release v1.0.${{ github.run_number }}
+        tag_name: v2.0.${{ github.run_number }}
+        name: Release v2.0.${{ github.run_number }}
         draft: false
         prerelease: false
-
-    - name: Upload Release Asset (Linux)
-      uses: actions/upload-release-asset@v1
+        files: |
+          build/script-check
+          build/script-check.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./build/script-check
-        asset_name: script-check
-        asset_content_type: application/octet-stream
-
-    - name: Upload Release Asset (Windows)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./build/script-check.exe
-        asset_name: script-check.exe
-        asset_content_type: application/octet-stream

@@ -1,3 +1,5 @@
 execution.log
 test_data/
 bin/
+*.exe
+config.yaml

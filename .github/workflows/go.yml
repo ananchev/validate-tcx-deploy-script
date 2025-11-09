@@ -22,7 +22,6 @@ jobs:
             goos: windows
             goarch: amd64
             output: script-check.exe
-        go-version: [1.23]  # Updated to latest stable Go version
 
     steps:
     - name: Checkout code
@@ -31,7 +30,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: '1.23'
 
     - name: Build Go Application
       run: go build -ldflags "-w -s" -o ${{ matrix.output }}

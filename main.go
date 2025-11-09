@@ -20,7 +20,12 @@ func main() {
 	args := ProcessArgs()
 	configurationParameters := getConfig(args.ConfigPath)
 
-	logger.InitLogger(configurationParameters.Logfile, args.LogLevel)
+	err := logger.InitLogger(configurationParameters.Logfile, args.LogLevel)
+	if err != nil {
+		panic("Failed to initialize logger: " + err.Error())
+	}
+	defer logger.Close()
+
 	analyzer.Run(configurationParameters)
 
 }

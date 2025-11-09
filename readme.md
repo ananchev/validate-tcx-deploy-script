@@ -25,6 +25,7 @@ sequenceDiagram
 
     loop Analyze the config-n deployment scripts for Linux & Windows
         Analyzer->>Analyzer: Check syntax of the script <br> arguments providing file paths
+        Analyzer->>Analyzer: Do path separators match the script target OS? <br>
         Analyzer->>Analyzer: Are all file paths in the <br> script existing on file system?
         Analyzer->>Analyzer: Are there files on file system <br> not included in the script?
         Analyzer->>Analyzer: Check input file for stylesheet import <br> and if all XML files exist on disk

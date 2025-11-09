@@ -1,0 +1,72 @@
+scripts:
+  - filename:	DeploymentInstructions.bat
+    target_os:	windows
+  - filename:	DeploymentInstructions.sh
+    target_os:	linux
+path_parameters:
+  - input
+  - xml_file
+  - name
+  - path
+  - file
+source_code_root: 'path\to\repo'
+ignore_patterns:
+  global:
+    - '000-Installer'
+    - '000-Integrations'
+    - '001-Start_Automation'
+    - '002-Integration_Automation'
+    - '003-Infrastructure_Automation'
+    - '010-DC-QuickDeploy'
+    - '040-SourceCode'
+    - '050-AWC_Custom'
+    - '055-AWC_TypeIcons'
+    - '057-AWC_Tiles'
+    - '058-Application'
+    - '060-Binaries'
+    - '070-BMIDE'
+    - '085-Dynamic_LOV'
+    - '090-BatchLoV'
+    - '090-Transfer_Modes'
+    - '1001-DataModelDocumentation'
+    - '100-Ruletree'
+    - '110-Classification'
+    - '120-Queries'
+    - '130-Workflow_Templates'
+    - '140-TC_DATA'
+    - '150-TC_ROOT'
+    - '160-Revision_Rules'
+    - '170-Site_Preferences'
+    - '205-AWC_Configurations'
+    - '200-Stylesheets' # path for stylesheet XMLs is checked separately
+    - '210-Tables_Config'
+    - '220-Relation_Browser_Conf'
+    - '230-XSLT'
+    - '240-Workspaces'
+    - '250-Logical_Objects'
+    - '260-Calendar'
+    - '270-PropertyFindFormatter'
+    - '300-CAD_Configuration'
+    - '330-Templates'
+    - '331-AddressList'
+    - '400-Templates_Schedule'
+    - '500-Templates_Doc'
+    - '600-Reports'
+    - '610-ReportDesigns'
+    - '700-Dispatcher_Configuration'
+    - '800-Documentation'
+    - '900-Import_Export_Tools'
+    - '950-APE'
+    - '993-Automation_Zip_Upload'
+    - '994-Automation_Zip_Download'
+    - '995-Sample_Data'
+    - '996-Test_Automation'
+    - '997-Test_Data'
+    - '998-Test_Scripts'
+    - '999-Packages'
+    - 'DeploymentInstructions.bat'
+    - 'DeploymentInstructions.sh'
+    - 'README.md'
+  stylesheets_folder:
+    - '*.txt'
+logfile: execution.log

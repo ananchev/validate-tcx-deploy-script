@@ -12,7 +12,10 @@ import (
 func setupParityTest() {
 	// Reset global state
 	scriptExecutables = make(map[string]map[string]bool)
-	
+	analysisResult = Result{
+		File: make(map[string]Lines),
+	}
+
 	// Initialize logger to prevent nil pointer errors
 	// Use os.DevNull to avoid creating test log files
 	logger.InitLogger(os.DevNull, "error")
@@ -346,4 +349,162 @@ func TestGetWindowsCounterpart_FindsMatch(t *testing.T) {
 	if windowsScript != expectedWindows {
 		t.Errorf("Expected %q, got %q", expectedWindows, windowsScript)
 	}
+}
+
+// FILE PATH PARITY TESTS
+
+// TestCheckScriptParity_FilePathPerfectMatch tests matching file paths between Windows and Linux
+// What it tests: Both scripts reference same files (with normalized separators) -> No parity issues
+func TestCheckScriptParity_FilePathPerfectMatch(t *testing.T) {
+	setupParityTest()
+
+	// Set up identical file paths (Windows uses backslash, Linux uses forward slash)
+	analysisResult.File["deploy_win.bat"] = Lines{
+		Valid: map[int]string{
+			1: `085-Dynamic_LOV\Nw4RoHSExemptions.xml`,
+			2: `085-Dynamic_LOV\Nw4RoHSRegulation.xml`,
+		},
+		StyleSheetImport: make(map[int]StyleSheetImport),
+		Invalid:          make(map[int]string),
+		Skipped:          make(map[int]string),
+		Missing:          []string{},
+	}
+
+	analysisResult.File["deploy_linux.sh"] = Lines{
+		Valid: map[int]string{
+			1: `085-Dynamic_LOV/Nw4RoHSExemptions.xml`,
+			2: `085-Dynamic_LOV/Nw4RoHSRegulation.xml`,
+		},
+		StyleSheetImport: make(map[int]StyleSheetImport),
+		Invalid:          make(map[int]string),
+		Skipped:          make(map[int]string),
+		Missing:          []string{},
+	}
+
+	scriptExecutables["deploy_win.bat"] = map[string]bool{}
+	scriptExecutables["deploy_linux.sh"] = map[string]bool{}
+
+	scripts := []scriptDefinition{
+		{Filename: "deploy_win.bat", TargetOS: "windows"},
+		{Filename: "deploy_linux.sh", TargetOS: "linux"},
+	}
+
+	checkScriptParity(scripts)
+
+	// Should report no parity issues (paths are equivalent after normalization)
+}
+
+// TestCheckScriptParity_FilePathMissingInLinux tests files in Windows but missing in Linux
+// What it tests: Windows has 4 files, Linux has only 2 -> Reports 2 files missing in Linux
+func TestCheckScriptParity_FilePathMissingInLinux(t *testing.T) {
+	setupParityTest()
+
+	analysisResult.File["deploy_win.bat"] = Lines{
+		Valid: map[int]string{
+			1: `085-Dynamic_LOV\Nw4AutomotiveClass.xml`,
+			2: `085-Dynamic_LOV\Nw4Packaging.xml`,
+			3: `085-Dynamic_LOV\Nw4RoHSExemptions.xml`,
+			4: `085-Dynamic_LOV\Nw4RoHSRegulation.xml`,
+		},
+		StyleSheetImport: make(map[int]StyleSheetImport),
+		Invalid:          make(map[int]string),
+		Skipped:          make(map[int]string),
+		Missing:          []string{},
+	}
+
+	analysisResult.File["deploy_linux.sh"] = Lines{
+		Valid: map[int]string{
+			1: `085-Dynamic_LOV/Nw4RoHSExemptions.xml`,
+			2: `085-Dynamic_LOV/Nw4RoHSRegulation.xml`,
+		},
+		StyleSheetImport: make(map[int]StyleSheetImport),
+		Invalid:          make(map[int]string),
+		Skipped:          make(map[int]string),
+		Missing:          []string{},
+	}
+
+	scriptExecutables["deploy_win.bat"] = map[string]bool{}
+	scriptExecutables["deploy_linux.sh"] = map[string]bool{}
+
+	scripts := []scriptDefinition{
+		{Filename: "deploy_win.bat", TargetOS: "windows"},
+		{Filename: "deploy_linux.sh", TargetOS: "linux"},
+	}
+
+	checkScriptParity(scripts)
+
+	// Should report Nw4AutomotiveClass.xml and Nw4Packaging.xml missing in Linux
+}
+
+// TestCheckScriptParity_FilePathMissingInWindows tests files in Linux but missing in Windows
+// What it tests: Linux has extra files not in Windows -> Reports files missing in Windows
+func TestCheckScriptParity_FilePathMissingInWindows(t *testing.T) {
+	setupParityTest()
+
+	analysisResult.File["deploy_win.bat"] = Lines{
+		Valid: map[int]string{
+			1: `085-Dynamic_LOV\Nw4RoHSExemptions.xml`,
+		},
+		StyleSheetImport: make(map[int]StyleSheetImport),
+		Invalid:          make(map[int]string),
+		Skipped:          make(map[int]string),
+		Missing:          []string{},
+	}
+
+	analysisResult.File["deploy_linux.sh"] = Lines{
+		Valid: map[int]string{
+			1: `085-Dynamic_LOV/Nw4RoHSExemptions.xml`,
+			2: `085-Dynamic_LOV/Nw4LinuxOnly.xml`,
+		},
+		StyleSheetImport: make(map[int]StyleSheetImport),
+		Invalid:          make(map[int]string),
+		Skipped:          make(map[int]string),
+		Missing:          []string{},
+	}
+
+	scriptExecutables["deploy_win.bat"] = map[string]bool{}
+	scriptExecutables["deploy_linux.sh"] = map[string]bool{}
+
+	scripts := []scriptDefinition{
+		{Filename: "deploy_win.bat", TargetOS: "windows"},
+		{Filename: "deploy_linux.sh", TargetOS: "linux"},
+	}
+
+	checkScriptParity(scripts)
+
+	// Should report Nw4LinuxOnly.xml missing in Windows
+}
+
+// TestCheckScriptParity_FilePathEmptyScripts tests both scripts with no file paths
+// What it tests: Both scripts have no valid file paths -> No parity issues
+func TestCheckScriptParity_FilePathEmptyScripts(t *testing.T) {
+	setupParityTest()
+
+	analysisResult.File["deploy_win.bat"] = Lines{
+		Valid:            make(map[int]string),
+		StyleSheetImport: make(map[int]StyleSheetImport),
+		Invalid:          make(map[int]string),
+		Skipped:          make(map[int]string),
+		Missing:          []string{},
+	}
+
+	analysisResult.File["deploy_linux.sh"] = Lines{
+		Valid:            make(map[int]string),
+		StyleSheetImport: make(map[int]StyleSheetImport),
+		Invalid:          make(map[int]string),
+		Skipped:          make(map[int]string),
+		Missing:          []string{},
+	}
+
+	scriptExecutables["deploy_win.bat"] = map[string]bool{}
+	scriptExecutables["deploy_linux.sh"] = map[string]bool{}
+
+	scripts := []scriptDefinition{
+		{Filename: "deploy_win.bat", TargetOS: "windows"},
+		{Filename: "deploy_linux.sh", TargetOS: "linux"},
+	}
+
+	checkScriptParity(scripts)
+
+	// Both empty -> no parity issues
 }

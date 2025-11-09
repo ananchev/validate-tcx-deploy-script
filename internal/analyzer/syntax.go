@@ -361,24 +361,31 @@ func checkScriptParity(scripts []scriptDefinition) {
 		// Collect all executables from Windows scripts
 		windowsExecs := make(map[string]bool)
 		for _, ws := range windowsScripts {
+			logger.Debug("Collecting executables from Windows script '{ws}'", "ws", ws)
 			for exec := range scriptExecutables[ws] {
 				windowsExecs[exec] = true
+				logger.Debug("  Windows executable: '{exec}'", "exec", exec)
 			}
 		}
+		logger.Debug("Total Windows executables: {count}", "count", len(windowsExecs))
 
 		// Collect all executables from Linux scripts
 		linuxExecs := make(map[string]bool)
 		for _, ls := range linuxScripts {
+			logger.Debug("Collecting executables from Linux script '{ls}'", "ls", ls)
 			for exec := range scriptExecutables[ls] {
 				linuxExecs[exec] = true
+				logger.Debug("  Linux executable: '{exec}'", "exec", exec)
 			}
 		}
+		logger.Debug("Total Linux executables: {count}", "count", len(linuxExecs))
 
 		// Find executables in Windows but not in Linux
 		missingInLinux := []string{}
 		for exec := range windowsExecs {
 			if !linuxExecs[exec] {
 				missingInLinux = append(missingInLinux, exec)
+				logger.Debug("Executable '{exec}' found in Windows but not in Linux", "exec", exec)
 			}
 		}
 
@@ -387,6 +394,7 @@ func checkScriptParity(scripts []scriptDefinition) {
 		for exec := range linuxExecs {
 			if !windowsExecs[exec] {
 				missingInWindows = append(missingInWindows, exec)
+				logger.Debug("Executable '{exec}' found in Linux but not in Windows", "exec", exec)
 			}
 		}
 
@@ -404,6 +412,73 @@ func checkScriptParity(scripts []scriptDefinition) {
 		}
 
 		if len(missingInLinux) == 0 && len(missingInWindows) == 0 {
+			logger.Separate("none")
+		}
+
+		// Check file path parity
+		logger.Separate(" ")
+		logger.Separate("Checking that Windows and Linux scripts reference the same file paths...")
+
+		// Collect all file paths from Windows scripts (normalized to forward slashes)
+		windowsPaths := make(map[string]bool)
+		for _, ws := range windowsScripts {
+			logger.Debug("Collecting file paths from Windows script '{ws}'", "ws", ws)
+			for _, path := range analysisResult.File[ws].Valid {
+				normalizedPath := strings.ReplaceAll(path, `\`, `/`)
+				windowsPaths[normalizedPath] = true
+				logger.Debug("  Windows path: '{path}' -> normalized: '{norm}'", "path", path, "norm", normalizedPath)
+			}
+		}
+		logger.Debug("Total Windows paths: {count}", "count", len(windowsPaths))
+
+		// Collect all file paths from Linux scripts
+		linuxPaths := make(map[string]bool)
+		for _, ls := range linuxScripts {
+			logger.Debug("Collecting file paths from Linux script '{ls}'", "ls", ls)
+			for _, path := range analysisResult.File[ls].Valid {
+				normalizedPath := strings.ReplaceAll(path, `\`, `/`)
+				linuxPaths[normalizedPath] = true
+				logger.Debug("  Linux path: '{path}' -> normalized: '{norm}'", "path", path, "norm", normalizedPath)
+			}
+		}
+		logger.Debug("Total Linux paths: {count}", "count", len(linuxPaths))
+
+		// Find paths in Windows but not in Linux
+		missingPathsInLinux := []string{}
+		for path := range windowsPaths {
+			if !linuxPaths[path] {
+				missingPathsInLinux = append(missingPathsInLinux, path)
+				logger.Debug("Path '{path}' found in Windows but not in Linux", "path", path)
+			}
+		}
+
+		// Find paths in Linux but not in Windows
+		missingPathsInWindows := []string{}
+		for path := range linuxPaths {
+			if !windowsPaths[path] {
+				missingPathsInWindows = append(missingPathsInWindows, path)
+				logger.Debug("Path '{path}' found in Linux but not in Windows", "path", path)
+			}
+		}
+
+		// Report findings
+		if len(missingPathsInLinux) > 0 {
+			sort.Strings(missingPathsInLinux)
+			logger.Error("File paths in Windows script(s) but missing in Linux script(s):")
+			for _, path := range missingPathsInLinux {
+				logger.Error("  {path}", "path", path)
+			}
+		}
+
+		if len(missingPathsInWindows) > 0 {
+			sort.Strings(missingPathsInWindows)
+			logger.Error("File paths in Linux script(s) but missing in Windows script(s):")
+			for _, path := range missingPathsInWindows {
+				logger.Error("  {path}", "path", path)
+			}
+		}
+
+		if len(missingPathsInLinux) == 0 && len(missingPathsInWindows) == 0 {
 			logger.Separate("none")
 		}
 	}

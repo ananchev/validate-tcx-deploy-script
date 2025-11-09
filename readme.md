@@ -37,6 +37,10 @@ sequenceDiagram
         end
 
     end
+    Analyzer->>Analyzer: Check parity: Do Windows & Linux scripts <br> call same executables and reference same files?
+    critical Parity mismatch
+        Analyzer->>Logger: Log error with missing executables or file paths
+    end
     Logger->>User: Output analysis results
     Note left of Main: <Logfile path as set in config>.log
 ```

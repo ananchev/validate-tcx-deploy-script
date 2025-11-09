@@ -41,9 +41,11 @@ This document describes the internal code flow and architecture from a technical
 - **Example**: Script references `110-Classification/missing.xml` → ERROR if not found
 
 ### 5. Script Parity Check (`checkScriptParity`)
-- **Check**: Do Windows and Linux scripts reference the same executables?
+- **Check**: Do Windows and Linux scripts reference the same executables AND file paths?
 - **Goal**: Ensure both deployment paths are equivalent
-- **Example**: Both scripts must call the same utilities equivalently: `plmxml_import`, `preferences_manager`, `clsutility`, `make_user`, etc. → ERROR if mismatch
+- **Example**: 
+  - Both scripts must call the same utilities: `plmxml_import`, `preferences_manager`, `clsutility`, `make_user`, etc. → ERROR if mismatch
+  - Both scripts must reference the same file paths: If Windows script has `085-Dynamic_LOV\Nw4AutomotiveClass.xml`, Linux script must have `085-Dynamic_LOV/Nw4AutomotiveClass.xml` → ERROR if missing
 
 ### 6. Results & Cleanup
 - **Output validation results** → Log all errors/warnings
@@ -175,6 +177,8 @@ Linux script (.sh):    Must use forward slash (/)
 - `parseLineAsCommand(line string, lineNumber int, scriptFile, targetOS string)`
 - `validatePathSeparators(path, targetOS, scriptFile string, lineNumber int) bool`
 - `checkScriptParity(scripts []scriptDefinition)` - Verify Windows/Linux script parity
+  - Compare executables called by both scripts
+  - Compare file paths referenced by both scripts (normalized for cross-platform)
 
 ---
 

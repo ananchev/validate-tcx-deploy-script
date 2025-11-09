@@ -103,7 +103,10 @@ func Run(params Parameters) {
 		}
 		validLines := replaceInMap(analysisResult.File[script.Filename].Valid, convertFrom, convertTo)
 
-		compareFilesWithScripts(script.Filename, validLines, params.SourceCodeRoot, ignores.Global)
+		if err := compareFilesWithScripts(script.Filename, validLines, params.SourceCodeRoot, ignores.Global); err != nil {
+			logger.Error("Errors occurred during file comparison for '{script}': {e}", "script", script.Filename, "e", err.Error())
+			// Continue processing other scripts despite errors
+		}
 		logger.Separate(" ")
 	}
 

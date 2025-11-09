@@ -95,7 +95,10 @@ func checkStylesheetPaths(scriptFile string, styleSheetImport map[int]StyleSheet
 
 		logger.Debug("Comparison if all repositry files in '200-Stylesheets' are referenced in '{input}'", "input", osLocalizedInputFileLocation)
 		xmlsLocation := filepath.Join(sourceCodeRoot, osLocalizedXMLsFilePath)
-		compareFilesWithScripts(osLocalizedInputFileLocation, xmlFilesReferences.Paths("relative"), xmlsLocation, ignores.StyleSheetsFolder)
+		if err := compareFilesWithScripts(osLocalizedInputFileLocation, xmlFilesReferences.Paths("relative"), xmlsLocation, ignores.StyleSheetsFolder); err != nil {
+			logger.Error("Errors occurred during stylesheet comparison for '{input}': {e}", "input", osLocalizedInputFileLocation, "e", err.Error())
+			// Continue processing despite errors
+		}
 
 	}
 

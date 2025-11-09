@@ -153,13 +153,21 @@ func compareFilesWithScripts(script string, validLines map[int]string, root stri
 	}
 	logger.Debug("Searching for files in the repository that are not present as valid lines in the script '{s}'...", "s", script)
 	// Iterate through the slice and check each item
+	hasErrors := false
 	for _, item := range filesFound {
 		// Check if the item exists in valueSet
 		if _, ok := valueSet[item]; !ok {
 			logger.Error("Filepath '{item}' does not exist in the script file '{script}'", "item", item, "script", script)
+			hasErrors = true
 		} else {
 			logger.Info("'{item}' is found in the script file '{script}'", "item", item, "script", script)
 		}
+	}
+
+	if !hasErrors && len(filesFound) > 0 {
+		logger.Info("All repository files are referenced in the script")
+	} else if len(filesFound) == 0 {
+		logger.Info("No files found in repository to check")
 	}
 
 	// Return the error at the end so caller knows issues occurred

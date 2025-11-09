@@ -87,12 +87,15 @@ func checkFileSyntax(filePath string, sourceCodeRoot string, targetOS string) {
 	logger.Info("stylesheet import")
 	logValidationResults("stylesheet import", filePath)
 	logger.Separate("lines with invalid syntax of referenced filepaths")
-	logValidationResults("invalid", filePath)
+	hasInvalidLines := logValidationResults("invalid", filePath)
+	if !hasInvalidLines {
+		logger.Separate("none")
+	}
 	logger.Info("skipped lines")
 	logValidationResults("skipped", filePath)
 }
 
-func logValidationResults(lineType string, filePath string) {
+func logValidationResults(lineType string, filePath string) bool {
 	var lines map[int]string
 	switch lineType {
 	case "valid":
@@ -106,7 +109,7 @@ func logValidationResults(lineType string, filePath string) {
 	}
 	if len(lines) == 0 {
 		logger.Info("No {lt} entries found", "lt", lineType)
-		return
+		return false
 	}
 
 	// sort by line number and print
@@ -123,6 +126,7 @@ func logValidationResults(lineType string, filePath string) {
 			logger.Info("'{f}' line '{ln}' is valid: '{val}'", "f", filePath, "ln", i, "val", lines[i])
 		}
 	}
+	return true
 }
 
 func parseLineAsCommand(file string, line string, lineNumber int) {
@@ -335,7 +339,9 @@ func checkScriptParity(scripts []scriptDefinition) {
 		return // Need at least 2 scripts to compare
 	}
 
+	logger.Heading(" ")
 	logger.Separate("SCRIPT PARITY CHECK")
+	logger.Separate("=====================================")
 	logger.Separate("Checking that Windows and Linux scripts call the same executables...")
 
 	// Group scripts by target OS
@@ -398,7 +404,7 @@ func checkScriptParity(scripts []scriptDefinition) {
 		}
 
 		if len(missingInLinux) == 0 && len(missingInWindows) == 0 {
-			logger.Info("Windows and Linux scripts call the same set of executables")
+			logger.Separate("none")
 		}
 	}
 }
